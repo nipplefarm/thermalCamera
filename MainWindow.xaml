@@ -23,8 +23,8 @@
 
 
         <TextBlock x:Name="temperatureTextBox" Grid.Row="1" Grid.Column="1" Margin="10,10,10,10"/>
-        <ComboBox x:Name="camera1Selector" Grid.Row="1" Grid.Column="0" SelectionChanged="Camera1Selector_SelectionChanged" Margin="0,36,0,0" Grid.RowSpan="2"/>
-        <ComboBox x:Name="camera2Selector" Grid.Row="1" Grid.Column="1" SelectionChanged="Camera2Selector_SelectionChanged" Margin="0,36,0,0" Grid.RowSpan="2"/>
+        <ComboBox x:Name="camera1Selector" Grid.Row="1" Grid.Column="0" Margin="0,36,0,0" Grid.RowSpan="2"/>
+        <ComboBox x:Name="camera2Selector" Grid.Row="1" Grid.Column="1" Margin="0,36,0,0" Grid.RowSpan="2"/>
 
         <Image x:Name="camera1Image" Grid.Row="0" Grid.Column="0"/>
         <Image x:Name="camera2Image" Grid.Row="0" Grid.Column="1"/>
