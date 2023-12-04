@@ -84,11 +84,13 @@ namespace thermalCamera
             {
                 await StartCamerasAsync();
                 startStopButton.Content = "Stop";
+                recordButton.IsEnabled = true;
             }
             else
             {
                 StopCameras();
                 startStopButton.Content = "Start";
+                recordButton.IsEnabled = false;
             }
             isCapturing = !isCapturing;
         }
@@ -358,7 +360,7 @@ namespace thermalCamera
                 if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
                 {
                     selectedFolderPath = dialog.SelectedPath;
-                    recordButton.IsEnabled = true; // Enable the record button
+                    recordButton.IsEnabled = isCapturing; // Enable the record button
                     directoryMessageTextBlock.Visibility = Visibility.Collapsed; // Hide the message
                 }
             }

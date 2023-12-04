@@ -1,7 +1,7 @@
 ﻿<Window x:Name="Thermal_Camera" x:Class="thermalCamera.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Camera View" Height="500" Width="799">
+        Title="Camera View" Height="600" Width="900">
     <Grid>
 
         <Grid.RowDefinitions>
