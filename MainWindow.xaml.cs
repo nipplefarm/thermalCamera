@@ -36,6 +36,7 @@ namespace thermalCamera
         private bool isCapturing = false;
         private int camera1FileCounter = 0;
         private int camera2FileCounter = 0;
+        
 
         
         
@@ -43,6 +44,8 @@ namespace thermalCamera
         {
             InitializeComponent();
             PopulateCameraSelection();
+            recordButton.IsEnabled = false; // Disable record button initially
+            directoryMessageTextBlock.Visibility = selectedFolderPath == "" ? Visibility.Visible : Visibility.Collapsed;
         }
         private void PopulateCameraSelection()
         {
@@ -64,7 +67,16 @@ namespace thermalCamera
                     }
                 }
             }
+
+            camera1Selector.SelectionChanged += CameraSelectionChanged;
+            camera2Selector.SelectionChanged += CameraSelectionChanged;
         }
+
+        private void CameraSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            startStopButton.IsEnabled = camera1Selector.SelectedIndex != -1 || camera2Selector.SelectedIndex != -1;
+        }
+
 
         private async void StartStopButton_Click(object sender, RoutedEventArgs e)
         {
@@ -211,8 +223,18 @@ namespace thermalCamera
             {
                 Mat frame = new Mat();
                 camera1Capture.Retrieve(frame);
+                try
+                {
+                    int x = 10; // Placeholder X coordinate
+                    int y = 10; // Placeholder Y coordinate
+                    double pixelValue = GetPixelValue(frame, x, y);
+                    Trace.WriteLine($"Pixel value at ({x},{y}): {pixelValue}");
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"Error getting pixel value: {ex.Message}");
+                }
 
-                
 
                 if (isRecording)
                 {
@@ -251,6 +273,19 @@ namespace thermalCamera
                 }
             }
         }
+        private double GetPixelValue(Mat frame, int x, int y)
+        {
+            if (frame == null || frame.IsEmpty || x < 0 || y < 0 || x >= frame.Cols || y >= frame.Rows)
+            {
+                throw new ArgumentException("Invalid frame or pixel coordinates.");
+            }
+
+            // Assuming the frame is a single channel grayscale image
+            var value = Marshal.ReadByte(frame.DataPointer + y * frame.Step + x * frame.ElementSize);
+            return value;
+        }
+
+
 
 
         private void RecordButton_Click(object sender, RoutedEventArgs e)
@@ -323,7 +358,8 @@ namespace thermalCamera
                 if (result == System.Windows.Forms.DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
                 {
                     selectedFolderPath = dialog.SelectedPath;
-
+                    recordButton.IsEnabled = true; // Enable the record button
+                    directoryMessageTextBlock.Visibility = Visibility.Collapsed; // Hide the message
                 }
             }
         }

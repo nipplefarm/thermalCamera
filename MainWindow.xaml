@@ -14,6 +14,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
@@ -23,28 +24,31 @@
 
 
         <TextBlock x:Name="temperatureTextBox" Grid.Row="1" Grid.Column="1" Margin="10,10,10,10"/>
-        <ComboBox x:Name="camera1Selector" Grid.Row="1" Grid.Column="0" Margin="0,36,0,0" Grid.RowSpan="2"/>
-        <ComboBox x:Name="camera2Selector" Grid.Row="1" Grid.Column="1" Margin="0,36,0,0" Grid.RowSpan="2"/>
+        <ComboBox x:Name="camera1Selector" Grid.Row="1" Grid.Column="0" Margin="0,36,0,0" Grid.RowSpan="2" />
+        <ComboBox x:Name="camera2Selector" Grid.Row="1" Grid.Column="1" Margin="0,36,0,0" Grid.RowSpan="2" />
 
         <Image x:Name="camera1Image" Grid.Row="0" Grid.Column="0"/>
         <Image x:Name="camera2Image" Grid.Row="0" Grid.Column="1"/>
 
 
-        <Button x:Name="startStopButton" Grid.Row="3" Grid.ColumnSpan="2"
-                Content="Start" Margin="10,10,10,10" Click="StartStopButton_Click"/>
-
+        <Button x:Name="startStopButton" Grid.Row="3" Grid.ColumnSpan="2" IsEnabled="False"
+                Content="Start" Margin="10,10,10,10" Click="StartStopButton_Click" />
+        
+        <TextBlock x:Name="directoryMessageTextBlock" Grid.Row="5" Grid.ColumnSpan="2" 
+                Text="Choose a directory before recording" Margin="10" 
+                Foreground="Red" Visibility="Collapsed" HorizontalAlignment="Center"/>
 
         <Button x:Name="recordButton" Grid.Row="4" Grid.ColumnSpan="2" 
-                Content="Record" Margin="10,10,10,10" Click="RecordButton_Click"/>
+                Content="Record" Margin="10" Click="RecordButton_Click" IsEnabled="False"/>
 
-        <Button x:Name="selectDirectoryButton" Grid.Row="5" Grid.ColumnSpan="2" 
+        <Button x:Name="selectDirectoryButton" Grid.Row="6" Grid.ColumnSpan="2" 
                 Content="Select Directory" Margin="10,10,10,10" Click="SelectDirectoryButton_Click"/>
 
 
-        <Button x:Name="quitButton" Grid.Row="6" Grid.ColumnSpan="2" 
+        <Button x:Name="quitButton" Grid.Row="7" Grid.ColumnSpan="2" 
                 Content="Quit" Margin="10,10,10,10" Click="QuitButton_Click"/>
 
-        <ComboBox x:Name="choiceComboBox" Grid.Row="7" Grid.ColumnSpan="2" Margin="10,10,10,10" SelectionChanged="ChoiceComboBox_SelectionChanged">
+        <ComboBox x:Name="choiceComboBox" Grid.Row="8" Grid.ColumnSpan="2" Margin="10,10,10,10" SelectionChanged="ChoiceComboBox_SelectionChanged" SelectedIndex="0">
             <ComboBoxItem Content="Octet"/>
             <ComboBoxItem Content="Square"/>
             <ComboBoxItem Content="Plain"/>
