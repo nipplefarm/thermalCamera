@@ -31,8 +31,8 @@ namespace thermalCamera
         private bool isRecording = false;
         private String selectedFolderPath = "";
         private string recordingFolderPath = "";
-        private VideoCapture camera1Capture;
-        private VideoCapture camera2Capture;
+        private VideoCapture? camera1Capture;
+        private VideoCapture? camera2Capture;
         private bool isCapturing = false;
         private int camera1FileCounter = 0;
         private int camera2FileCounter = 0;
@@ -93,6 +93,7 @@ namespace thermalCamera
                 recordButton.IsEnabled = false;
             }
             isCapturing = !isCapturing;
+            UpdateRecordButtonState();
         }
         private async Task StartCamerasAsync()
         {
@@ -141,7 +142,7 @@ namespace thermalCamera
                 if (camera1Index >= 0)
                 {
                     camera1Capture = new VideoCapture(camera1Index);
-                    camera1Capture.ImageGrabbed += ProcessFrameCamera1;
+                    camera1Capture.ImageGrabbed += ProcessFrameCamera1!;
                     camera1Capture.Start();
                 }
                 await Task.Delay(500);
@@ -149,14 +150,14 @@ namespace thermalCamera
                 if (camera2Index >= 0)
                 {
                     camera2Capture = new VideoCapture(camera2Index);
-                    camera2Capture.ImageGrabbed += ProcessFrameCamera2;
+                    camera2Capture.ImageGrabbed += ProcessFrameCamera2!;
                     camera2Capture.Start();
                 }
             });
             // Continue with the rest of your start logic
             // Example: Start capturing frames, update UI elements, etc.
         }
-        private Mat CaptureFrameFromCamera(VideoCapture camera)
+        private Mat? CaptureFrameFromCamera(VideoCapture camera)
         {
             if (camera != null && camera.IsOpened)
             {
@@ -170,7 +171,7 @@ namespace thermalCamera
         }
         private void CheckCameraPixelFormat(VideoCapture camera)
         {
-            Mat frame = CaptureFrameFromCamera(camera);
+            Mat frame = CaptureFrameFromCamera(camera)!;
             if (frame != null)
             {
                 DepthType depth = frame.Depth;
@@ -284,7 +285,7 @@ namespace thermalCamera
 
             // Assuming the frame is a single channel grayscale image
             var value = Marshal.ReadByte(frame.DataPointer + y * frame.Step + x * frame.ElementSize);
-            return value;
+            return value/100 + 273.15;
         }
 
 
@@ -308,7 +309,7 @@ namespace thermalCamera
                 string selectedOption = "Default";
                 if (choiceComboBox.SelectedItem is ComboBoxItem selectedItem)
                 {
-                    selectedOption = selectedItem.Content.ToString();
+                    selectedOption = selectedItem.Content.ToString()!;
                 }
 
                 // Ensure the recordingFolderPath is always based on the selectedFolderPath
@@ -320,6 +321,10 @@ namespace thermalCamera
             {
                 // Stop recording logic if needed
             }
+        }
+        private void UpdateRecordButtonState()
+        {
+            recordButton.IsEnabled = !string.IsNullOrEmpty(selectedFolderPath) && isCapturing;
         }
         private string CreateRecordingFolderName(string option)
         {
@@ -336,7 +341,7 @@ namespace thermalCamera
                 // Check if the Content is not null before calling ToString()
                 if (selectedItem.Content != null)
                 {
-                    string selectedChoice = selectedItem.Content.ToString();
+                    string selectedChoice = selectedItem.Content.ToString()!;
                     Trace.WriteLine($"ComboBox selection changed: {selectedChoice}");
                 }
                 else
@@ -364,6 +369,7 @@ namespace thermalCamera
                     directoryMessageTextBlock.Visibility = Visibility.Collapsed; // Hide the message
                 }
             }
+            UpdateRecordButtonState();
         }
 
         private bool IsCameraSendingFrames(VideoCapture camera)
@@ -408,7 +414,7 @@ namespace thermalCamera
             Mat displayableImage = ConvertY16ToDisplayableFormat(y16Image);
 
             // Now convert the displayable image to BitmapSource
-            BitmapSource bitmapSource = ToBitmapSource(displayableImage);
+            BitmapSource bitmapSource = ToBitmapSource(displayableImage)!;
             return bitmapSource;
         }
         private Mat ConvertY16ToDisplayableFormat(Mat y16Image)
@@ -424,7 +430,7 @@ namespace thermalCamera
             CvInvoke.CvtColor(scaledImage, bgrImage, Emgu.CV.CvEnum.ColorConversion.Gray2Bgr);
             return bgrImage;
         }
-        public BitmapSource ToBitmapSource(Mat image)
+        public BitmapSource? ToBitmapSource(Mat image)
         {
             if (image == null || image.IsEmpty)
                 return null;
