@@ -36,10 +36,11 @@ namespace thermalCamera
         private bool isCapturing = false;
         private int camera1FileCounter = 0;
         private int camera2FileCounter = 0;
-        
+        private Mat latestFrameCamera1; // Add this line
+        private Mat latestFrameCamera2; // If you have a second camera
 
-        
-        
+
+
         public MainWindow()
         {
             InitializeComponent();
@@ -97,66 +98,52 @@ namespace thermalCamera
         }
         private async Task StartCamerasAsync()
         {
-            
             int camera1Index = camera1Selector.SelectedIndex;
             int camera2Index = camera2Selector.SelectedIndex;
-            int maxRetries = 3; // Max number of retries
-            int delayBetweenRetries = 500; // Delay in milliseconds (1 second)
 
             // Release any existing resources
             ReleaseCameraResources();
 
-            // Initialize and start the first camera
-            await Task.Run(async () =>
+            await Task.Run(() =>
+            {
+                // Initialize and start the first camera
+                if (camera1Index >= 0)
                 {
-                camera1Capture = new VideoCapture(camera1Index);
-                CheckCameraPixelFormat(camera1Capture);
-                for (int i = 0; i < maxRetries; i++)
-                {
-                    if (IsCameraSendingFrames(camera1Capture))
-                    {
-                        // Additional setup if needed, like setting camera parameters
-                        // Example: camera1Capture.Set(VideoCaptureProperties.FrameWidth, 1920);
-                        break;
-                    }
-
-                    camera1Capture.Dispose();
-                        await Task.Delay(delayBetweenRetries);
-                    camera1Capture = new VideoCapture(camera1Index);
+                    camera1Capture = new VideoCapture(camera1Index, VideoCapture.API.DShow);
+                    SetCameraToY16(camera1Capture);
+                    camera1Capture.ImageGrabbed += ProcessFrameCamera1;
+                    camera1Capture.Start();
                 }
 
                 // Initialize and start the second camera
-                camera2Capture = new VideoCapture(camera2Index);
-                for (int i = 0; i < maxRetries; i++)
-                {
-                    if (IsCameraSendingFrames(camera2Capture))
-                    {
-                        // Additional setup if needed
-                        break;
-                    }
-
-                    camera2Capture.Dispose();
-                    await Task.Delay(delayBetweenRetries);
-                    camera2Capture = new VideoCapture(camera2Index);
-                }
-                if (camera1Index >= 0)
-                {
-                    camera1Capture = new VideoCapture(camera1Index);
-                    camera1Capture.ImageGrabbed += ProcessFrameCamera1!;
-                    camera1Capture.Start();
-                }
-                await Task.Delay(500);
-
                 if (camera2Index >= 0)
                 {
-                    camera2Capture = new VideoCapture(camera2Index);
-                    camera2Capture.ImageGrabbed += ProcessFrameCamera2!;
+                    camera2Capture = new VideoCapture(camera2Index, VideoCapture.API.DShow);
+                    SetCameraToY16(camera2Capture);
+                    camera2Capture.ImageGrabbed += ProcessFrameCamera2;
                     camera2Capture.Start();
                 }
             });
-            // Continue with the rest of your start logic
-            // Example: Start capturing frames, update UI elements, etc.
         }
+        private void SetCameraToY16(VideoCapture capture)
+        {
+            if (capture != null)
+            {
+                // Set the camera to capture in Y16 format
+                int fourcc = VideoWriter.Fourcc('Y', '1', '6', ' ');
+                capture.Set(CapProp.FourCC, fourcc);
+
+                // Disable automatic conversion to RGB
+                capture.Set(CapProp.ConvertRgb, 0);
+
+                // Debug: Read back the properties to ensure they are set correctly
+                int readFourcc = (int)capture.Get(CapProp.FourCC);
+                int readConvertRgb = (int)capture.Get(CapProp.ConvertRgb);
+                Trace.WriteLine($"Set FOURCC: {fourcc}, Read FOURCC: {readFourcc}");
+                Trace.WriteLine($"Set ConvertRgb: 0, Read ConvertRgb: {readConvertRgb}");
+            }
+        }
+
         private Mat? CaptureFrameFromCamera(VideoCapture camera)
         {
             if (camera != null && camera.IsOpened)
@@ -224,58 +211,81 @@ namespace thermalCamera
         {
             if (camera1Capture != null && camera1Capture.Ptr != IntPtr.Zero)
             {
-                Mat frame = new Mat();
-                camera1Capture.Retrieve(frame);
-                try
-                {
-                    int x = 10; // Placeholder X coordinate
-                    int y = 10; // Placeholder Y coordinate
-                    double pixelValue = GetPixelValue(frame, x, y);
-                    Trace.WriteLine($"Pixel value at ({x},{y}): {pixelValue}");
-                }
-                catch (Exception ex)
-                {
-                    Trace.WriteLine($"Error getting pixel value: {ex.Message}");
-                }
+                if (latestFrameCamera1 == null)
+                    latestFrameCamera1 = new Mat();
 
+                camera1Capture.Retrieve(latestFrameCamera1);
 
                 if (isRecording)
                 {
                     string fileName = $"camera1_{camera1FileCounter:D4}.tiff";
                     string filePath = Path.Combine(recordingFolderPath, fileName);
-                    SaveRawFrame(frame, filePath); // Save the frame as a TIFF file
                     camera1FileCounter++;
+                    latestFrameCamera1.Save(filePath); // Save the raw Y16 frame
                 }
+
+                // Convert the Y16 frame for display
+                Mat displayableFrame = ConvertY16ToDisplayableRgb(latestFrameCamera1);
 
                 Dispatcher.Invoke(() =>
                 {
-                    camera1Image.Source = ToBitmapSource(frame);
+                    // Update the image source
+                    camera1Image.Source = ToBitmapSource(displayableFrame);
                 });
             }
         }
+
+        // Similar changes for ProcessFrameCamera2
+
+
 
 
         private void ProcessFrameCamera2(object sender, EventArgs e)
         {
             if (camera2Capture != null && camera2Capture.Ptr != IntPtr.Zero)
             {
-                Mat frame = new Mat();
-                camera2Capture.Retrieve(frame);
+                if (latestFrameCamera2 == null)
+                    latestFrameCamera2 = new Mat();
 
-                Dispatcher.Invoke(() =>
-                {
-                    camera2Image.Source = ToBitmapSource(frame);
-                });
+                camera2Capture.Retrieve(latestFrameCamera2);
 
                 if (isRecording)
                 {
-                    string fileName = $"camera2_{camera2FileCounter:D4}.tiff";
+                    string fileName = $"camera2_{camera1FileCounter:D4}.tiff";
                     string filePath = Path.Combine(recordingFolderPath, fileName);
-                    frame.Save(filePath); // Save the frame as a TIFF file
                     camera2FileCounter++;
+                    latestFrameCamera2.Save(filePath); // Save the raw Y16 frame
                 }
+
+                // Convert the Y16 frame for display
+                Mat displayableFrame = ConvertY16ToDisplayableRgb(latestFrameCamera2);
+
+                Dispatcher.Invoke(() =>
+                {
+                    // Update the image source
+                    camera2Image.Source = ToBitmapSource(displayableFrame);
+                });
             }
         }
+        private Mat ConvertY16ToDisplayableRgb(Mat y16Image)
+        {
+            if (y16Image == null || y16Image.IsEmpty)
+                return new Mat();
+
+            // Ensure the image is 16-bit single-channel
+            if (y16Image.Depth != DepthType.Cv16U || y16Image.NumberOfChannels != 1)
+            {
+                throw new InvalidOperationException("Expected Y16 format (16-bit single-channel)");
+            }
+
+            // Normalize the 16-bit image to 8-bit for display
+            Mat normalizedImage = new Mat();
+            CvInvoke.Normalize(y16Image, normalizedImage, 0, 255, NormType.MinMax, DepthType.Cv8U);
+            Mat rgbImage = new Mat();
+            CvInvoke.CvtColor(normalizedImage, rgbImage, ColorConversion.Gray2Bgr);
+            return rgbImage;
+        }
+
         private double GetPixelValue(Mat frame, int x, int y)
         {
             if (frame == null || frame.IsEmpty || x < 0 || y < 0 || x >= frame.Cols || y >= frame.Rows)
@@ -407,29 +417,7 @@ namespace thermalCamera
             }
         }
 
-        public BitmapSource ConvertY16ToBitmapSource(Mat y16Image)
-        {
-            // Convert the Y16 image to a displayable format (e.g., BGR)
-            
-            Mat displayableImage = ConvertY16ToDisplayableFormat(y16Image);
-
-            // Now convert the displayable image to BitmapSource
-            BitmapSource bitmapSource = ToBitmapSource(displayableImage)!;
-            return bitmapSource;
-        }
-        private Mat ConvertY16ToDisplayableFormat(Mat y16Image)
-        {
-            // Implement the conversion from Y16 to a displayable format
-            // This might involve scaling the 16-bit values to 8-bit and converting to BGR
-            // The specifics of this will depend on the range and nature of your Y16 data
-
-            // Example (simplified and might need adjustment):
-            Mat scaledImage = new Mat();
-            CvInvoke.Normalize(y16Image, scaledImage, 0, 255, Emgu.CV.CvEnum.NormType.MinMax, Emgu.CV.CvEnum.DepthType.Cv8U);
-            Mat bgrImage = new Mat();
-            CvInvoke.CvtColor(scaledImage, bgrImage, Emgu.CV.CvEnum.ColorConversion.Gray2Bgr);
-            return bgrImage;
-        }
+        
         public BitmapSource? ToBitmapSource(Mat image)
         {
             if (image == null || image.IsEmpty)
