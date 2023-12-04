@@ -19,7 +19,7 @@ using Emgu.CV.CvEnum;
 using System.Runtime.InteropServices;
 using System.IO;
 using MessageBox = System.Windows.MessageBox;
-using Treehopper;
+
 
 namespace thermalCamera
 {
@@ -36,6 +36,8 @@ namespace thermalCamera
         private bool isCapturing = false;
         private int camera1FileCounter = 0;
         private int camera2FileCounter = 0;
+
+        
         
         public MainWindow()
         {
@@ -325,14 +327,6 @@ namespace thermalCamera
                 }
             }
         }
-        private void Camera1Selector_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Logic to handle camera 1 selection change
-        }
-        private void Camera2Selector_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Logic to handle camera 2 selection change
-        }
 
         private bool IsCameraSendingFrames(VideoCapture camera)
         {
@@ -369,14 +363,10 @@ namespace thermalCamera
             }
         }
 
-
-
-
-
         public BitmapSource ConvertY16ToBitmapSource(Mat y16Image)
         {
             // Convert the Y16 image to a displayable format (e.g., BGR)
-     
+            
             Mat displayableImage = ConvertY16ToDisplayableFormat(y16Image);
 
             // Now convert the displayable image to BitmapSource
