@@ -23,17 +23,19 @@
         </Grid.ColumnDefinitions>
 
 
-        <TextBlock x:Name="temperatureTextBox" Grid.Row="1" Grid.Column="1" Margin="10,10,10,10"/>
+
+        <Image x:Name="camera1Image" Grid.Row="0" Grid.Column="0" MouseMove="Image_MouseMove" MouseLeave="Image_MouseLeave"/>
+        <TextBlock x:Name="camera1TemperatureTextBlock" Grid.Row="1" Grid.Column="0" TextAlignment="Center"/>
+
+        <Image x:Name="camera2Image" Grid.Row="0" Grid.Column="2" MouseMove="Image_MouseMove" MouseLeave="Image_MouseLeave"/>
+        <TextBlock x:Name="camera2TemperatureTextBlock" Grid.Row="1" Grid.Column="1" TextAlignment="Center"/>
+
         <ComboBox x:Name="camera1Selector" Grid.Row="1" Grid.Column="0" Margin="0,36,0,0" Grid.RowSpan="2" />
         <ComboBox x:Name="camera2Selector" Grid.Row="1" Grid.Column="1" Margin="0,36,0,0" Grid.RowSpan="2" />
 
-        <Image x:Name="camera1Image" Grid.Row="0" Grid.Column="0"/>
-        <Image x:Name="camera2Image" Grid.Row="0" Grid.Column="1"/>
-
-
         <Button x:Name="startStopButton" Grid.Row="3" Grid.ColumnSpan="2" IsEnabled="False"
                 Content="Start" Margin="10,10,10,10" Click="StartStopButton_Click" />
-        
+
         <TextBlock x:Name="directoryMessageTextBlock" Grid.Row="5" Grid.ColumnSpan="2" 
                 Text="Choose a directory before recording" Margin="10" 
                 Foreground="Red" Visibility="Collapsed" HorizontalAlignment="Center"/>
@@ -56,4 +58,3 @@
         </ComboBox>
     </Grid>
 </Window>
-

@@ -36,6 +36,7 @@
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.8.1.5350" />
     <PackageReference Include="Emgu.CV.Wpf" Version="4.8.1.5350" />
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Treehopper.Desktop" Version="1.11.4" />
     <PackageReference Include="Treehopper.Libraries" Version="1.11.5" />
   </ItemGroup>

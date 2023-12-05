@@ -19,6 +19,8 @@ using Emgu.CV.CvEnum;
 using System.Runtime.InteropServices;
 using System.IO;
 using MessageBox = System.Windows.MessageBox;
+using Newtonsoft.Json;
+using System.Collections.Generic;
 
 
 namespace thermalCamera
@@ -38,7 +40,7 @@ namespace thermalCamera
         private int camera2FileCounter = 0;
         private Mat latestFrameCamera1; // Add this line
         private Mat latestFrameCamera2; // If you have a second camera
-
+        private List<CalibrationData> calibrationData;
 
 
         public MainWindow()
@@ -47,7 +49,9 @@ namespace thermalCamera
             PopulateCameraSelection();
             recordButton.IsEnabled = false; // Disable record button initially
             directoryMessageTextBlock.Visibility = selectedFolderPath == "" ? Visibility.Visible : Visibility.Collapsed;
+            calibrationData = LoadCalibrationData("Data/CalibrationData.json");
         }
+
         private void PopulateCameraSelection()
         {
             int index = 0;
@@ -135,6 +139,9 @@ namespace thermalCamera
 
                 // Disable automatic conversion to RGB
                 capture.Set(CapProp.ConvertRgb, 0);
+
+                //capture.Set(CapProp.FrameHeight, 120);
+                //capture.Set(CapProp.FrameWidth, 160);
 
                 // Debug: Read back the properties to ensure they are set correctly
                 int readFourcc = (int)capture.Get(CapProp.FourCC);
@@ -231,13 +238,10 @@ namespace thermalCamera
                 {
                     // Update the image source
                     camera1Image.Source = ToBitmapSource(displayableFrame);
+                   
                 });
             }
         }
-
-        // Similar changes for ProcessFrameCamera2
-
-
 
 
         private void ProcessFrameCamera2(object sender, EventArgs e)
@@ -267,6 +271,7 @@ namespace thermalCamera
                 });
             }
         }
+
         private Mat ConvertY16ToDisplayableRgb(Mat y16Image)
         {
             if (y16Image == null || y16Image.IsEmpty)
@@ -286,7 +291,7 @@ namespace thermalCamera
             return rgbImage;
         }
 
-        private double GetPixelValue(Mat frame, int x, int y)
+        private double GetPixelValue(Mat frame, int x, int y, List<CalibrationData> calibrationData)
         {
             if (frame == null || frame.IsEmpty || x < 0 || y < 0 || x >= frame.Cols || y >= frame.Rows)
             {
@@ -294,8 +299,8 @@ namespace thermalCamera
             }
 
             // Assuming the frame is a single channel grayscale image
-            var value = Marshal.ReadByte(frame.DataPointer + y * frame.Step + x * frame.ElementSize);
-            return value/100 + 273.15;
+            var rawValue = Marshal.ReadByte(frame.DataPointer + y * frame.Step + x * frame.ElementSize);
+            return rawValue;
         }
 
 
@@ -382,42 +387,104 @@ namespace thermalCamera
             UpdateRecordButtonState();
         }
 
-        private bool IsCameraSendingFrames(VideoCapture camera)
+        private void Image_MouseMove(object sender, MouseEventArgs e)
         {
-            if (camera == null)
-                return false;
-
-            try
+            if (sender is Image image && image.Source != null)
             {
-                using (Mat frame = new Mat())
+                System.Windows.Point position = e.GetPosition(image);
+
+                double xScale = image.Source.Width / image.ActualWidth;
+                double yScale = image.Source.Height / image.ActualHeight;
+
+                int x = (int)(position.X * xScale);
+                int y = (int)(position.Y * yScale);
+
+                Mat? frameToUse = null;
+                TextBlock? textBlockToUpdate = null;
+
+                if (image.Equals(camera1Image))
                 {
-                    camera.Read(frame);
-                    if (!frame.IsEmpty)
-                        return true;
+                    frameToUse = latestFrameCamera1;
+                    textBlockToUpdate = camera1TemperatureTextBlock;
+                }
+                else if (image.Equals(camera2Image))
+                {
+                    frameToUse = latestFrameCamera2;
+                    textBlockToUpdate = camera2TemperatureTextBlock;
+                }
+
+                if (frameToUse != null && textBlockToUpdate != null)
+                {
+                    try
+                    {
+                        double pixelValue = GetPixelValue(frameToUse, x, y, calibrationData);
+                        Dispatcher.Invoke(() =>
+                        {
+                            textBlockToUpdate.Text = $"Temperature: {pixelValue.ToString("F2")}°C";
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine($"Error getting pixel value: {ex.Message}");
+                    }
                 }
             }
-            catch
-            {
-                // Handle exceptions if necessary
-            }
-
-            camera.Dispose();
-            return false;
         }
-        private void SaveRawFrame(Mat frame, string filePath)
+
+        private void UpdateCenterPixelTemperature(Mat frame, TextBlock temperatureTextBlock)
         {
-            try
+            if (frame != null && temperatureTextBlock != null)
             {
-                frame.Save(filePath); // Emgu.CV's method to save Mat object
-            }
-            catch (Exception ex)
-            {
-                // Handle exceptions, like issues with file writing
-                Debug.WriteLine("Error saving frame: " + ex.Message);
+                int centerX = frame.Width / 2;
+                int centerY = frame.Height / 2;
+                double pixelValue = GetPixelValue(frame, centerX, centerY, calibrationData);
+                temperatureTextBlock.Text = $"Center Temperature: {pixelValue.ToString("F2")}°C";
             }
         }
 
-        
+        private void Image_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (sender.Equals(camera1Image))
+            {
+                UpdateCenterPixelTemperature(latestFrameCamera1, camera1TemperatureTextBlock);
+            }
+            else if (sender.Equals(camera2Image))
+            {
+                UpdateCenterPixelTemperature(latestFrameCamera2, camera2TemperatureTextBlock);
+            }
+        }
+        private List<CalibrationData> LoadCalibrationData(string filePath)
+        {
+            var jsonData = File.ReadAllText(filePath);
+            return JsonConvert.DeserializeObject<List<CalibrationData>>(jsonData);
+        }
+        private double ApplyCalibration(double cameraReading, List<CalibrationData> calibrationData)
+        {
+            // Simple linear interpolation between calibration points
+            // For more accurate results, consider using a more sophisticated method
+            for (int i = 0; i < calibrationData.Count - 1; i++)
+            {
+                if (cameraReading >= calibrationData[i].CameraReading &&
+                    cameraReading <= calibrationData[i + 1].CameraReading)
+                {
+                    double diff = calibrationData[i + 1].CameraReading - calibrationData[i].CameraReading;
+                    double factor = (cameraReading - calibrationData[i].CameraReading) / diff;
+                    return calibrationData[i].ReferenceTemperature +
+                           factor * (calibrationData[i + 1].ReferenceTemperature - calibrationData[i].ReferenceTemperature);
+                }
+            }
+
+            // If the reading is outside the calibration range, you might want to handle it differently
+            return cameraReading; // or throw an exception, or handle however you see fit
+        }
+
+        public class CalibrationData
+        {
+            public double ReferenceTemperature { get; set; }
+            public double CameraReading { get; set; }
+        }
+
+
         public BitmapSource? ToBitmapSource(Mat image)
         {
             if (image == null || image.IsEmpty)
