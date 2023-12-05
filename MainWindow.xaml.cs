@@ -41,7 +41,9 @@ namespace thermalCamera
         private Mat latestFrameCamera1; // Add this line
         private Mat latestFrameCamera2; // If you have a second camera
         private List<CalibrationData> calibrationData;
-
+        private bool isMouseOverImage = false;
+        private System.Windows.Threading.DispatcherTimer temperatureUpdateTimer;
+        private String calibrationFilePath = "Data/calibrationData.json";
 
         public MainWindow()
         {
@@ -49,8 +51,13 @@ namespace thermalCamera
             PopulateCameraSelection();
             recordButton.IsEnabled = false; // Disable record button initially
             directoryMessageTextBlock.Visibility = selectedFolderPath == "" ? Visibility.Visible : Visibility.Collapsed;
-            calibrationData = LoadCalibrationData("Data/CalibrationData.json");
+            calibrationData = LoadCalibrationData(calibrationFilePath);
+            temperatureUpdateTimer = new System.Windows.Threading.DispatcherTimer();
+            temperatureUpdateTimer.Tick += TemperatureUpdateTimer_Tick;
+            temperatureUpdateTimer.Interval = TimeSpan.FromMilliseconds(500); // Update every 500 milliseconds
+            temperatureUpdateTimer.Start();
         }
+
 
         private void PopulateCameraSelection()
         {
@@ -59,7 +66,7 @@ namespace thermalCamera
             {
                 using (var tempCapture = new VideoCapture(index))
                 {
-                    CheckCameraPixelFormat(tempCapture);
+
                     if (tempCapture.IsOpened)
                     {
                         camera1Selector.Items.Add("Camera " + index);
@@ -117,6 +124,11 @@ namespace thermalCamera
                     SetCameraToY16(camera1Capture);
                     camera1Capture.ImageGrabbed += ProcessFrameCamera1;
                     camera1Capture.Start();
+                    if (camera1Capture != null && camera1Capture.Ptr != IntPtr.Zero)
+                    {
+                        UpdateCenterPixelTemperature(latestFrameCamera1, camera1TemperatureTextBlock);
+                    }
+
                 }
 
                 // Initialize and start the second camera
@@ -126,6 +138,10 @@ namespace thermalCamera
                     SetCameraToY16(camera2Capture);
                     camera2Capture.ImageGrabbed += ProcessFrameCamera2;
                     camera2Capture.Start();
+                    if (camera2Capture != null && camera2Capture.Ptr != IntPtr.Zero)
+                    {
+                        UpdateCenterPixelTemperature(latestFrameCamera2, camera2TemperatureTextBlock);
+                    }
                 }
             });
         }
@@ -140,9 +156,6 @@ namespace thermalCamera
                 // Disable automatic conversion to RGB
                 capture.Set(CapProp.ConvertRgb, 0);
 
-                //capture.Set(CapProp.FrameHeight, 120);
-                //capture.Set(CapProp.FrameWidth, 160);
-
                 // Debug: Read back the properties to ensure they are set correctly
                 int readFourcc = (int)capture.Get(CapProp.FourCC);
                 int readConvertRgb = (int)capture.Get(CapProp.ConvertRgb);
@@ -151,43 +164,6 @@ namespace thermalCamera
             }
         }
 
-        private Mat? CaptureFrameFromCamera(VideoCapture camera)
-        {
-            if (camera != null && camera.IsOpened)
-            {
-                Mat frame = new Mat();
-                if (camera.Read(frame))
-                {
-                    return frame;
-                }
-            }
-            return null;
-        }
-        private void CheckCameraPixelFormat(VideoCapture camera)
-        {
-            Mat frame = CaptureFrameFromCamera(camera)!;
-            if (frame != null)
-            {
-                DepthType depth = frame.Depth;
-                int numberOfChannels = frame.NumberOfChannels;
-
-                Trace.WriteLine($"Frame Depth: {depth}, Channels: {numberOfChannels}");
-
-                // Checking if it's a 16-bit single-channel image (Y16)
-                if (depth == DepthType.Cv16U && numberOfChannels == 1)
-                {
-                    Trace.WriteLine("The camera is providing Y16 format images.");
-                }
-                else
-                {
-                    Trace.WriteLine("The camera is not providing Y16 format images.");
-                }
-            }
-            else
-            {
-                Trace.WriteLine("Failed to capture a frame from the camera.");
-            }
-        }
 
         private void StopCameras()
         {
@@ -223,22 +199,36 @@ namespace thermalCamera
 
                 camera1Capture.Retrieve(latestFrameCamera1);
 
+                Mat croppedFrame1 = CropImage(latestFrameCamera1, 160, 120);
                 if (isRecording)
                 {
                     string fileName = $"camera1_{camera1FileCounter:D4}.tiff";
                     string filePath = Path.Combine(recordingFolderPath, fileName);
                     camera1FileCounter++;
-                    latestFrameCamera1.Save(filePath); // Save the raw Y16 frame
+                    croppedFrame1.Save(filePath); // Save the raw Y16 frame
                 }
-
+                if (!isMouseOverImage)
+                {
+                    UpdateCenterPixelTemperature(croppedFrame1, camera1TemperatureTextBlock);
+                }
                 // Convert the Y16 frame for display
-                Mat displayableFrame = ConvertY16ToDisplayableRgb(latestFrameCamera1);
+                Mat displayableFrame = ConvertY16ToDisplayableRgb(croppedFrame1);
 
                 Dispatcher.Invoke(() =>
                 {
-                    // Update the image source
-                    camera1Image.Source = ToBitmapSource(displayableFrame);
-                   
+                    // Check if the application is still running
+                    if (System.Windows.Application.Current != null && !Dispatcher.HasShutdownStarted)
+                    {
+                        try
+                        {
+                            // Update the image source
+                            camera1Image.Source = ToBitmapSource(displayableFrame);
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            // Handle the exception or do nothing if the task was canceled because the application is closing
+                        }
+                    }
                 });
             }
         }
@@ -252,27 +242,42 @@ namespace thermalCamera
                     latestFrameCamera2 = new Mat();
 
                 camera2Capture.Retrieve(latestFrameCamera2);
-
+                Mat croppedFrame2 = CropImage(latestFrameCamera2, 160, 120);
+              
                 if (isRecording)
                 {
                     string fileName = $"camera2_{camera1FileCounter:D4}.tiff";
                     string filePath = Path.Combine(recordingFolderPath, fileName);
                     camera2FileCounter++;
-                    latestFrameCamera2.Save(filePath); // Save the raw Y16 frame
+                    croppedFrame2.Save(filePath); // Save the raw Y16 frame
                 }
-
+                if (!isMouseOverImage)
+                {
+                    UpdateCenterPixelTemperature(croppedFrame2, camera2TemperatureTextBlock);
+                }
                 // Convert the Y16 frame for display
-                Mat displayableFrame = ConvertY16ToDisplayableRgb(latestFrameCamera2);
+                Mat displayableFrame = ConvertY16ToDisplayableRgb(croppedFrame2);
 
                 Dispatcher.Invoke(() =>
                 {
-                    // Update the image source
-                    camera2Image.Source = ToBitmapSource(displayableFrame);
+                    // Check if the application is still running
+                    if (System.Windows.Application.Current != null && !Dispatcher.HasShutdownStarted)
+                    {
+                        try
+                        {
+                            // Update the image source
+                            camera2Image.Source = ToBitmapSource(displayableFrame);
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            // Handle the exception or do nothing if the task was canceled because the application is closing
+                        }
+                    }
                 });
             }
         }
 
-        private Mat ConvertY16ToDisplayableRgb(Mat y16Image)
+        private Mat ConvertY16ToDisplayableRgb(Mat y16Image, double minVal = 29115, double maxVal = 37315)
         {
             if (y16Image == null || y16Image.IsEmpty)
                 return new Mat();
@@ -283,13 +288,19 @@ namespace thermalCamera
                 throw new InvalidOperationException("Expected Y16 format (16-bit single-channel)");
             }
 
-            // Normalize the 16-bit image to 8-bit for display
+            // Normalize the 16-bit image to 8-bit using the specified raw value range
             Mat normalizedImage = new Mat();
             CvInvoke.Normalize(y16Image, normalizedImage, 0, 255, NormType.MinMax, DepthType.Cv8U);
-            Mat rgbImage = new Mat();
-            CvInvoke.CvtColor(normalizedImage, rgbImage, ColorConversion.Gray2Bgr);
-            return rgbImage;
+
+            // Apply a colormap for better visualization
+            Mat coloredImage = new Mat();
+            CvInvoke.ApplyColorMap(normalizedImage, coloredImage, ColorMapType.Jet);
+
+            return coloredImage;
         }
+
+
+
 
         private double GetPixelValue(Mat frame, int x, int y, List<CalibrationData> calibrationData)
         {
@@ -298,10 +309,16 @@ namespace thermalCamera
                 throw new ArgumentException("Invalid frame or pixel coordinates.");
             }
 
-            // Assuming the frame is a single channel grayscale image
-            var rawValue = Marshal.ReadByte(frame.DataPointer + y * frame.Step + x * frame.ElementSize);
-            return rawValue;
+            // Read 16-bit value (2 bytes) for Y16 format
+            IntPtr pixelPtr = frame.DataPointer + y * frame.Step + x * frame.ElementSize;
+            ushort rawValue = (ushort)(Marshal.ReadByte(pixelPtr) | (Marshal.ReadByte(pixelPtr + 1) << 8));
+
+            // Apply calibration
+            // APPLY CALIBRATION HERE 
+            // return ApplyCalibration(rawValue, calibrationData);
+            return rawValue/100 - 273.15;
         }
+
 
 
 
@@ -368,6 +385,7 @@ namespace thermalCamera
         }
         private void QuitButton_Click(object sender, RoutedEventArgs e)
         {
+            StopCameras();
             ReleaseCameraResources();
             System.Windows.Application.Current.Shutdown();
         }
@@ -387,20 +405,105 @@ namespace thermalCamera
             UpdateRecordButtonState();
         }
 
+        private void UpdateCenterPixelTemperature(Mat frame, TextBlock temperatureTextBlock)
+        {
+            if (!isMouseOverImage && frame != null && temperatureTextBlock != null)
+            {
+                int centerX = frame.Width / 2;
+                int centerY = frame.Height / 2;
+                double pixelValue = GetPixelValue(frame, centerX, centerY, calibrationData);
+
+                // Use Dispatcher to update the UI on the UI thread
+                Dispatcher.Invoke(() =>
+                {
+                    temperatureTextBlock.Text = $"Center Temperature: {pixelValue.ToString("F2")}°C";
+                });
+            }
+        }
+        private void TemperatureUpdateTimer_Tick(object sender, EventArgs e)
+        {
+            if (isMouseOverImage)
+            {
+                // Check which camera's image the mouse is currently over
+                var mousePositionCamera1 = Mouse.GetPosition(camera1Image);
+                var mousePositionCamera2 = Mouse.GetPosition(camera2Image);
+
+                // Convert to System.Drawing.Point
+                var drawingPointCamera1 = new System.Drawing.Point((int)mousePositionCamera1.X, (int)mousePositionCamera1.Y);
+                var drawingPointCamera2 = new System.Drawing.Point((int)mousePositionCamera2.X, (int)mousePositionCamera2.Y);
+
+                // Update temperature for the camera that the mouse is over
+                if (camera1Image.IsMouseOver)
+                {
+                    UpdateTemperatureDisplay(latestFrameCamera1, camera1Image, camera1TemperatureTextBlock, drawingPointCamera1);
+                }
+                else if (camera2Image.IsMouseOver)
+                {
+                    UpdateTemperatureDisplay(latestFrameCamera2, camera2Image, camera2TemperatureTextBlock, drawingPointCamera2);
+                }
+            }
+            else
+            {
+                // Update center pixel temperature for both cameras
+                UpdateCenterPixelTemperature(latestFrameCamera1, camera1TemperatureTextBlock);
+                UpdateCenterPixelTemperature(latestFrameCamera2, camera2TemperatureTextBlock);
+            }
+        }
+
+
+
+
+        private void UpdateTemperatureDisplay(Mat cameraFrame, Image cameraImage, TextBlock temperatureTextBlock, Point position)
+        {
+            double xScale = cameraImage.Source.Width / cameraImage.ActualWidth;
+            double yScale = cameraImage.Source.Height / cameraImage.ActualHeight;
+
+            int x = (int)(position.X * xScale);
+            int y = (int)(position.Y * yScale);
+
+            if (cameraFrame != null)
+            {
+                try
+                {
+                    double pixelValue = GetPixelValue(cameraFrame, x, y, calibrationData);
+                    Dispatcher.Invoke(() =>
+                    {
+                        temperatureTextBlock.Text = $"Temperature: {pixelValue.ToString("F2")}°C";
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"Error getting pixel value: {ex.Message}");
+                }
+            }
+        }
+
+
+
+        private void Image_MouseEnter(object sender, MouseEventArgs e)
+        {
+            isMouseOverImage = true;
+        }
+
+
+        private void Image_MouseLeave(object sender, MouseEventArgs e)
+        {
+            isMouseOverImage = false;
+        }
+
         private void Image_MouseMove(object sender, MouseEventArgs e)
         {
             if (sender is Image image && image.Source != null)
             {
                 System.Windows.Point position = e.GetPosition(image);
-
                 double xScale = image.Source.Width / image.ActualWidth;
                 double yScale = image.Source.Height / image.ActualHeight;
 
                 int x = (int)(position.X * xScale);
                 int y = (int)(position.Y * yScale);
 
-                Mat? frameToUse = null;
-                TextBlock? textBlockToUpdate = null;
+                Mat? frameToUse = image.Equals(camera1Image) ? latestFrameCamera1 : latestFrameCamera2;
+                TextBlock? textBlockToUpdate = image.Equals(camera1Image) ? camera1TemperatureTextBlock : camera2TemperatureTextBlock;
 
                 if (image.Equals(camera1Image))
                 {
@@ -415,44 +518,30 @@ namespace thermalCamera
 
                 if (frameToUse != null && textBlockToUpdate != null)
                 {
-                    try
-                    {
-                        double pixelValue = GetPixelValue(frameToUse, x, y, calibrationData);
-                        Dispatcher.Invoke(() =>
-                        {
-                            textBlockToUpdate.Text = $"Temperature: {pixelValue.ToString("F2")}°C";
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        Trace.WriteLine($"Error getting pixel value: {ex.Message}");
-                    }
+                    UpdateTemperatureAtPosition(frameToUse, x, y, textBlockToUpdate);
                 }
             }
         }
 
-        private void UpdateCenterPixelTemperature(Mat frame, TextBlock temperatureTextBlock)
+        private void UpdateTemperatureAtPosition(Mat frame, int x, int y, TextBlock textBlockToUpdate)
         {
-            if (frame != null && temperatureTextBlock != null)
+            try
             {
-                int centerX = frame.Width / 2;
-                int centerY = frame.Height / 2;
-                double pixelValue = GetPixelValue(frame, centerX, centerY, calibrationData);
-                temperatureTextBlock.Text = $"Center Temperature: {pixelValue.ToString("F2")}°C";
+                double pixelValue = GetPixelValue(frame, x, y, calibrationData);
+                Dispatcher.Invoke(() =>
+                {
+                    textBlockToUpdate.Text = $"Temperature: {pixelValue.ToString("F2")}°C";
+                });
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error getting pixel value: {ex.Message}");
             }
         }
 
-        private void Image_MouseLeave(object sender, MouseEventArgs e)
-        {
-            if (sender.Equals(camera1Image))
-            {
-                UpdateCenterPixelTemperature(latestFrameCamera1, camera1TemperatureTextBlock);
-            }
-            else if (sender.Equals(camera2Image))
-            {
-                UpdateCenterPixelTemperature(latestFrameCamera2, camera2TemperatureTextBlock);
-            }
-        }
+
+
+
         private List<CalibrationData> LoadCalibrationData(string filePath)
         {
             var jsonData = File.ReadAllText(filePath);
@@ -477,6 +566,17 @@ namespace thermalCamera
             // If the reading is outside the calibration range, you might want to handle it differently
             return cameraReading; // or throw an exception, or handle however you see fit
         }
+        private Mat CropImage(Mat original, int width, int height)
+        {
+            if (original == null || original.IsEmpty)
+                return new Mat();
+
+            // Define the size and location of the crop
+            Rectangle cropRect = new Rectangle(0, 0, width, height);
+            Mat croppedImage = new Mat(original, cropRect);
+            return croppedImage;
+        }
+
 
         public class CalibrationData
         {

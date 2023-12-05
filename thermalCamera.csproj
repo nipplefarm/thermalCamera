@@ -47,4 +47,10 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Data\CalibrationData.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,5 @@
+[
+    { "referenceTemperature": 20, "cameraReading": 18 },
+    { "referenceTemperature": 100, "cameraReading": 95 },
+    // Add more calibration points as needed
+]
