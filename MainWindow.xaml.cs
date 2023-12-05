@@ -64,15 +64,14 @@ namespace thermalCamera
         private void PopulateCameraSelection()
         {
             int index = 0;
+            List<int> cameraIndices = new List<int>();
             while (true)
             {
                 using (var tempCapture = new VideoCapture(index))
                 {
-
                     if (tempCapture.IsOpened)
                     {
-                        camera1Selector.Items.Add("Camera " + index);
-                        camera2Selector.Items.Add("Camera " + index);
+                        cameraIndices.Add(index);
                         index++;
                     }
                     else
@@ -82,16 +81,42 @@ namespace thermalCamera
                 }
             }
 
+            camera1Selector.ItemsSource = cameraIndices;
+            camera2Selector.ItemsSource = new List<int>(cameraIndices); // Create a copy for camera2Selector
+
             camera1Selector.SelectionChanged += CameraSelectionChanged;
             camera2Selector.SelectionChanged += CameraSelectionChanged;
         }
 
+
         // Enables start/stop button when a camera is selected.
         private void CameraSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            startStopButton.IsEnabled = camera1Selector.SelectedIndex != -1 || camera2Selector.SelectedIndex != -1;
+            if (sender is System.Windows.Controls.ComboBox comboBox)
+            {
+                if (comboBox.Equals(camera1Selector) && camera1Selector.SelectedItem != null)
+                {
+                    UpdateCameraSelectorItems(camera2Selector, camera1Selector);
+                }
+                else if (comboBox.Equals(camera2Selector) && camera2Selector.SelectedItem != null)
+                {
+                    UpdateCameraSelectorItems(camera1Selector, camera2Selector);
+                }
+
+                startStopButton.IsEnabled=camera1Selector.SelectedIndex != -1 || camera2Selector.SelectedIndex != -1;
+            }
         }
-       
+        private void UpdateCameraSelectorItems(System.Windows.Controls.ComboBox comboBoxToUpdate, System.Windows.Controls.ComboBox comboBoxWithSelectedValue)
+        {
+            var availableIndices = new List<int>((IEnumerable<int>)comboBoxWithSelectedValue.ItemsSource);
+            if (comboBoxToUpdate.SelectedItem != null)
+            {
+                availableIndices.Add((int)comboBoxToUpdate.SelectedItem);
+            }
+            availableIndices.Remove((int)comboBoxWithSelectedValue.SelectedItem);
+            comboBoxToUpdate.ItemsSource = availableIndices;
+        }
+
         // Starts/stops the cameras when the start button is clicked
         private async void StartStopButton_Click(object sender, RoutedEventArgs e)
         {
@@ -321,11 +346,12 @@ namespace thermalCamera
             // Read 16-bit value (2 bytes) for Y16 format
             IntPtr pixelPtr = frame.DataPointer + y * frame.Step + x * frame.ElementSize;
             ushort rawValue = (ushort)(Marshal.ReadByte(pixelPtr) | (Marshal.ReadByte(pixelPtr + 1) << 8));
-
+            double tempValue = (double)rawValue / 100 - 273.15;
             // Apply calibration
             // APPLY CALIBRATION HERE 
             // return ApplyCalibration(rawValue, calibrationData);
-            return rawValue/100 - 273.15;
+            Trace.WriteLine(tempValue);
+            return tempValue;
         }
 
 
