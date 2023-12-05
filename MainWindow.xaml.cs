@@ -30,6 +30,7 @@ namespace thermalCamera
     /// </summary>
     public partial class MainWindow : Window
     {
+        // Initiate flags
         private bool isRecording = false;
         private String selectedFolderPath = "";
         private string recordingFolderPath = "";
@@ -59,6 +60,7 @@ namespace thermalCamera
         }
 
 
+        // populates the  list of availbale camera indices
         private void PopulateCameraSelection()
         {
             int index = 0;
@@ -84,12 +86,13 @@ namespace thermalCamera
             camera2Selector.SelectionChanged += CameraSelectionChanged;
         }
 
+        // Enables start/stop button when a camera is selected.
         private void CameraSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             startStopButton.IsEnabled = camera1Selector.SelectedIndex != -1 || camera2Selector.SelectedIndex != -1;
         }
-
-
+       
+        // Starts/stops the cameras when the start button is clicked
         private async void StartStopButton_Click(object sender, RoutedEventArgs e)
         {
             if (!isCapturing)
@@ -107,6 +110,8 @@ namespace thermalCamera
             isCapturing = !isCapturing;
             UpdateRecordButtonState();
         }
+
+        // Starts the cameras and updates temperatures
         private async Task StartCamerasAsync()
         {
             int camera1Index = camera1Selector.SelectedIndex;
@@ -145,6 +150,8 @@ namespace thermalCamera
                 }
             });
         }
+        
+        // Sets the camera to Y16 and turns off auto RGB conversion
         private void SetCameraToY16(VideoCapture capture)
         {
             if (capture != null)
@@ -159,12 +166,11 @@ namespace thermalCamera
                 // Debug: Read back the properties to ensure they are set correctly
                 int readFourcc = (int)capture.Get(CapProp.FourCC);
                 int readConvertRgb = (int)capture.Get(CapProp.ConvertRgb);
-                Trace.WriteLine($"Set FOURCC: {fourcc}, Read FOURCC: {readFourcc}");
-                Trace.WriteLine($"Set ConvertRgb: 0, Read ConvertRgb: {readConvertRgb}");
+
             }
         }
 
-
+        // Stop camera logic
         private void StopCameras()
         {
             camera1Capture?.Stop();
@@ -176,6 +182,8 @@ namespace thermalCamera
             camera2Capture = null;
             ReleaseCameraResources();
         }
+
+        // Releases camera and its resources
         private void ReleaseCameraResources()
         {
             if (camera1Capture != null)
@@ -190,6 +198,8 @@ namespace thermalCamera
                 camera2Capture = null;
             }
         }
+
+        // Processes frames from cameras (saves file, Gets temperature, converts to RGB)
         private void ProcessFrameCamera1(object sender, EventArgs e)
         {
             if (camera1Capture != null && camera1Capture.Ptr != IntPtr.Zero)
@@ -226,14 +236,13 @@ namespace thermalCamera
                         }
                         catch (TaskCanceledException)
                         {
-                            // Handle the exception or do nothing if the task was canceled because the application is closing
                         }
                     }
                 });
             }
         }
 
-
+        // Same as above but for second camera
         private void ProcessFrameCamera2(object sender, EventArgs e)
         {
             if (camera2Capture != null && camera2Capture.Ptr != IntPtr.Zero)
@@ -270,13 +279,13 @@ namespace thermalCamera
                         }
                         catch (TaskCanceledException)
                         {
-                            // Handle the exception or do nothing if the task was canceled because the application is closing
                         }
                     }
                 });
             }
         }
 
+        // Converts from Y16 to RGB, min and maxVal set range for normalization to keep cameras comparable. (value is in centiKelvin)
         private Mat ConvertY16ToDisplayableRgb(Mat y16Image, double minVal = 29115, double maxVal = 37315)
         {
             if (y16Image == null || y16Image.IsEmpty)
@@ -301,7 +310,7 @@ namespace thermalCamera
 
 
 
-
+        // Gets temperature of pixel at x,y
         private double GetPixelValue(Mat frame, int x, int y, List<CalibrationData> calibrationData)
         {
             if (frame == null || frame.IsEmpty || x < 0 || y < 0 || x >= frame.Cols || y >= frame.Rows)
@@ -322,7 +331,7 @@ namespace thermalCamera
 
 
 
-
+        // Record button logic
         private void RecordButton_Click(object sender, RoutedEventArgs e)
         {
             isRecording = !isRecording;
@@ -351,9 +360,10 @@ namespace thermalCamera
             }
             else
             {
-                // Stop recording logic if needed
             }
         }
+
+        // Updates Record button state
         private void UpdateRecordButtonState()
         {
             recordButton.IsEnabled = !string.IsNullOrEmpty(selectedFolderPath) && isCapturing;
@@ -365,6 +375,7 @@ namespace thermalCamera
             return folderName;
         }
 
+        // ComboBox selection (Only relevant to my work)
         private void ChoiceComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
@@ -383,12 +394,16 @@ namespace thermalCamera
                 }
             }
         }
+
+        // Quit button logic
         private void QuitButton_Click(object sender, RoutedEventArgs e)
         {
             StopCameras();
             ReleaseCameraResources();
             System.Windows.Application.Current.Shutdown();
         }
+
+        // Directoy button logic
         private void SelectDirectoryButton_Click(object sender, RoutedEventArgs e)
         {
             using (var dialog = new FolderBrowserDialog())
@@ -404,7 +419,8 @@ namespace thermalCamera
             }
             UpdateRecordButtonState();
         }
-
+        
+        // update center pixel temp logic (Gives temperature of pixel in middle of frame) Can be used to get pixel value at arbitraty point.
         private void UpdateCenterPixelTemperature(Mat frame, TextBlock temperatureTextBlock)
         {
             if (!isMouseOverImage && frame != null && temperatureTextBlock != null)
@@ -420,6 +436,7 @@ namespace thermalCamera
                 });
             }
         }
+        // Ticker so mouse and central point temp can be updated regularly
         private void TemperatureUpdateTimer_Tick(object sender, EventArgs e)
         {
             if (isMouseOverImage)
@@ -450,9 +467,7 @@ namespace thermalCamera
             }
         }
 
-
-
-
+        // Updates temperature text boxes based on mouse location
         private void UpdateTemperatureDisplay(Mat cameraFrame, Image cameraImage, TextBlock temperatureTextBlock, Point position)
         {
             double xScale = cameraImage.Source.Width / cameraImage.ActualWidth;
@@ -479,18 +494,19 @@ namespace thermalCamera
         }
 
 
-
+        // Mouse enter logic for frames
         private void Image_MouseEnter(object sender, MouseEventArgs e)
         {
             isMouseOverImage = true;
         }
 
-
+        // mouse exit logic for frames
         private void Image_MouseLeave(object sender, MouseEventArgs e)
         {
             isMouseOverImage = false;
         }
 
+        // mouse move logic for frames
         private void Image_MouseMove(object sender, MouseEventArgs e)
         {
             if (sender is Image image && image.Source != null)
@@ -522,7 +538,7 @@ namespace thermalCamera
                 }
             }
         }
-
+        // updates temp based on mouse location
         private void UpdateTemperatureAtPosition(Mat frame, int x, int y, TextBlock textBlockToUpdate)
         {
             try
@@ -541,12 +557,14 @@ namespace thermalCamera
 
 
 
-
+        // calibration stuff
         private List<CalibrationData> LoadCalibrationData(string filePath)
         {
             var jsonData = File.ReadAllText(filePath);
             return JsonConvert.DeserializeObject<List<CalibrationData>>(jsonData);
         }
+
+        // calibration linear interp based off calibrationData.json
         private double ApplyCalibration(double cameraReading, List<CalibrationData> calibrationData)
         {
             // Simple linear interpolation between calibration points
@@ -566,6 +584,7 @@ namespace thermalCamera
             // If the reading is outside the calibration range, you might want to handle it differently
             return cameraReading; // or throw an exception, or handle however you see fit
         }
+        // crops image to get rid of two extraneous pixel rows
         private Mat CropImage(Mat original, int width, int height)
         {
             if (original == null || original.IsEmpty)
@@ -577,14 +596,14 @@ namespace thermalCamera
             return croppedImage;
         }
 
-
+        // calibration json logic
         public class CalibrationData
         {
             public double ReferenceTemperature { get; set; }
             public double CameraReading { get; set; }
         }
 
-
+        // Changes raw image to bitmap for viewing
         public BitmapSource? ToBitmapSource(Mat image)
         {
             if (image == null || image.IsEmpty)

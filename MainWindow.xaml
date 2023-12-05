@@ -55,6 +55,7 @@
             <ComboBoxItem Content="Square"/>
             <ComboBoxItem Content="Plain"/>
             <ComboBoxItem Content="Finned"/>
+            <ComboBoxItem Content=""/>
         </ComboBox>
     </Grid>
 </Window>
