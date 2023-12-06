@@ -648,11 +648,28 @@ namespace thermalCamera
             public List<CalibrationPoint> Points { get; set; }
         }
 
+
         public class CalibrationPoint
         {
             public double RawValue { get; set; }
             public double ReferenceTemperature { get; set; }
+
         }
+
+        public class DualCameraCalibrationPoint
+        {
+            public CalibrationPoint Camera1 { get; set; }
+            public CalibrationPoint Camera2 { get; set; }
+        }
+
+
+        private void EditCalibration_Click(object sender, RoutedEventArgs e)
+        {
+            string cameraId = "camera1"; // Or determine this based on user selection or other logic
+            var calibrationWindow = new CalibrationWindow("Data/calibrationData.json", cameraId);
+            calibrationWindow.ShowDialog();
+        }
+
 
         // Changes raw image to bitmap for viewing
         public BitmapSource? ToBitmapSource(Mat image)
