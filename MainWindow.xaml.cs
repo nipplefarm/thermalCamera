@@ -56,7 +56,7 @@ namespace thermalCamera
             calibrationData = LoadCalibrationData(calibrationFilePath);
             temperatureUpdateTimer = new System.Windows.Threading.DispatcherTimer();
             temperatureUpdateTimer.Tick += TemperatureUpdateTimer_Tick;
-            temperatureUpdateTimer.Interval = TimeSpan.FromMilliseconds(500); // Update every 500 milliseconds
+            temperatureUpdateTimer.Interval = TimeSpan.FromMilliseconds(250); // Update every 500 milliseconds
             temperatureUpdateTimer.Start();
             calibrationData = LoadCalibrationData(calibrationFilePath);
 
@@ -455,7 +455,7 @@ namespace thermalCamera
         // update center pixel temp logic (Gives temperature of pixel in middle of frame) Can be used to get pixel value at arbitraty point.
         private void UpdateCenterPixelTemperature(Mat frame, TextBlock temperatureTextBlock, String cameraId)
         {
-            if (!isMouseOverImage && frame != null && temperatureTextBlock != null)
+            if (frame != null && temperatureTextBlock != null)
             {
                 int centerX = frame.Width / 2;
                 int centerY = frame.Height / 2;
