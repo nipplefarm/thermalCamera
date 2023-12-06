@@ -1,5 +1,29 @@
 [
-    { "referenceTemperature": 20, "cameraReading": 18 },
-    { "referenceTemperature": 100, "cameraReading": 95 },
-    // Add more calibration points as needed
+  {
+    "CameraId": "camera1",
+    "Points": [
+      {
+        "RawValue": 29315,
+        "ReferenceTemperature": 18
+      },
+      {
+        "RawValue": 31315,
+        "ReferenceTemperature": 45
+      }
+    ]
+  },
+  {
+    "CameraId": "camera2",
+    "Points": [
+      {
+        "RawValue": 29315,
+        "ReferenceTemperature": 18
+      },
+      {
+        "RawValue": 31315,
+        "ReferenceTemperature": 45
+      }
+    ]
+  }
 ]
+

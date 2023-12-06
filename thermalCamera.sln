@@ -5,6 +5,8 @@ VisualStudioVersion = 17.7.34009.444
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "thermalCamera", "thermalCamera.csproj", "{B552F98F-2510-4154-A329-482AA1E07500}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "thermalCamera_App", "..\thermalCamera_App\thermalCamera_App.vdproj", "{38D3B166-0988-4A9F-B293-CCDB6362A3FE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,8 @@ Global
 		{B552F98F-2510-4154-A329-482AA1E07500}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B552F98F-2510-4154-A329-482AA1E07500}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B552F98F-2510-4154-A329-482AA1E07500}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38D3B166-0988-4A9F-B293-CCDB6362A3FE}.Debug|Any CPU.ActiveCfg = Debug
+		{38D3B166-0988-4A9F-B293-CCDB6362A3FE}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
