@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -602,8 +601,22 @@ namespace thermalCamera
         {
             var jsonData = File.ReadAllText(filePath);
             var cameraCalibrationDataList = JsonConvert.DeserializeObject<List<CameraCalibrationData>>(jsonData);
+
+            int desiredNumberOfPoints = 5; // Set the desired number of calibration points
+
+            foreach (var cameraData in cameraCalibrationDataList)
+            {
+                while (cameraData.Points.Count < desiredNumberOfPoints)
+                {
+                    cameraData.Points.Add(new CalibrationPoint { RawValue = 0, ReferenceTemperature = 0 });
+                }
+            }
+            File.WriteAllText(filePath, JsonConvert.SerializeObject(cameraCalibrationDataList, Formatting.Indented));
+
+
             return cameraCalibrationDataList.ToDictionary(data => data.CameraId, data => data.Points);
         }
+
 
 
 
@@ -655,20 +668,31 @@ namespace thermalCamera
             public double ReferenceTemperature { get; set; }
 
         }
-
-        public class DualCameraCalibrationPoint
+        private void OpenCalibrationFileButton_Click(object sender, RoutedEventArgs e)
         {
-            public CalibrationPoint Camera1 { get; set; }
-            public CalibrationPoint Camera2 { get; set; }
+            try
+            {
+                Process.Start("notepad.exe", calibrationFilePath);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening file: {ex.Message}");
+            }
+        }
+        private void ReloadCalibrationDataButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                calibrationData = LoadCalibrationData(calibrationFilePath);
+                MessageBox.Show("Calibration data reloaded successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error reloading data: {ex.Message}");
+            }
         }
 
 
-        private void EditCalibration_Click(object sender, RoutedEventArgs e)
-        {
-            string cameraId = "camera1"; // Or determine this based on user selection or other logic
-            var calibrationWindow = new CalibrationWindow("Data/calibrationData.json", cameraId);
-            calibrationWindow.ShowDialog();
-        }
 
 
         // Changes raw image to bitmap for viewing

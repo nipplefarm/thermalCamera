@@ -4,16 +4,11 @@
         xmlns:cali="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Camera View" Height="600" Width="900">
     <DockPanel>
-        <Menu DockPanel.Dock="Top" Grid.ColumnSpan="2">
-            <MenuItem Header="_Calibration">
-                <MenuItem Header="_Edit Calibration" Click="EditCalibration_Click"/>
-            </MenuItem>
-        </Menu>
         <Grid>
 
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -32,41 +27,44 @@
 
 
 
-            <Image x:Name="camera1Image" Grid.Row="1" Grid.Column="0" MouseMove="Image_MouseMove" MouseLeave="Image_MouseLeave" MouseEnter="Image_MouseEnter"/>
-            <TextBlock x:Name="camera1TemperatureTextBlock" Grid.Row="2" Grid.Column="0" TextAlignment="Center"/>
+            <Image x:Name="camera1Image" Grid.Row="0" Grid.Column="0" MouseMove="Image_MouseMove" MouseLeave="Image_MouseLeave" MouseEnter="Image_MouseEnter"/>
+            <TextBlock x:Name="camera1TemperatureTextBlock" Grid.Row="1" Grid.Column="0" TextAlignment="Center"/>
 
-            <Image x:Name="camera2Image" Grid.Row="1" Grid.Column="2" MouseMove="Image_MouseMove" MouseLeave="Image_MouseLeave" MouseEnter="Image_MouseEnter"/>
-            <TextBlock x:Name="camera2TemperatureTextBlock" Grid.Row="2" Grid.Column="1" TextAlignment="Center"/>
+            <Image x:Name="camera2Image" Grid.Row="0" Grid.Column="2" MouseMove="Image_MouseMove" MouseLeave="Image_MouseLeave" MouseEnter="Image_MouseEnter"/>
+            <TextBlock x:Name="camera2TemperatureTextBlock" Grid.Row="1" Grid.Column="1" TextAlignment="Center"/>
 
-            <ComboBox x:Name="camera1Selector" Grid.Row="3" Grid.Column="0" Margin="0,36,0,0" Grid.RowSpan="2" />
-            <ComboBox x:Name="camera2Selector" Grid.Row="3" Grid.Column="1" Margin="0,36,0,0" Grid.RowSpan="2" />
+            <ComboBox x:Name="camera1Selector" Grid.Row="2" Grid.Column="0" Margin="0,36,0,0" Grid.RowSpan="2" />
+            <ComboBox x:Name="camera2Selector" Grid.Row="2" Grid.Column="1" Margin="0,36,0,0" Grid.RowSpan="2" />
 
 
-            <Button x:Name="startStopButton" Grid.Row="5" Grid.ColumnSpan="2" IsEnabled="False"
+            <Button x:Name="startStopButton" Grid.Row="4" Grid.ColumnSpan="2" IsEnabled="False"
                     Content="Start" Margin="10,10,10,10" Click="StartStopButton_Click" />
 
-            <Button x:Name="recordButton" Grid.Row="6" Grid.ColumnSpan="2" 
+            <Button x:Name="recordButton" Grid.Row="5" Grid.ColumnSpan="2" 
                     Content="Record" Margin="10" Click="RecordButton_Click" IsEnabled="False"/>
 
-            <TextBlock x:Name="directoryMessageTextBlock" Grid.Row="7" Grid.ColumnSpan="2" 
+            <TextBlock x:Name="directoryMessageTextBlock" Grid.Row="6" Grid.ColumnSpan="2" 
                     Text="Choose a directory before recording" Margin="10" 
                     Foreground="Red" Visibility="Collapsed" HorizontalAlignment="Center"/>
 
 
-            <Button x:Name="selectDirectoryButton" Grid.Row="8" Grid.ColumnSpan="2" 
+            <Button x:Name="selectDirectoryButton" Grid.Row="7" Grid.ColumnSpan="2" 
                     Content="Select Directory" Margin="10,10,10,10" Click="SelectDirectoryButton_Click"/>
 
 
-            <Button x:Name="quitButton" Grid.Row="9" Grid.ColumnSpan="2" 
+            <Button x:Name="quitButton" Grid.Row="8" Grid.ColumnSpan="2" 
                     Content="Quit" Margin="10,10,10,10" Click="QuitButton_Click"/>
 
-            <ComboBox x:Name="choiceComboBox" Grid.Row="10" Grid.ColumnSpan="2" Margin="10,10,10,10" SelectionChanged="ChoiceComboBox_SelectionChanged" SelectedIndex="0">
+            <ComboBox x:Name="choiceComboBox" Grid.Row="9" Grid.ColumnSpan="2" Margin="10,10,10,10" SelectionChanged="ChoiceComboBox_SelectionChanged" SelectedIndex="0">
                 <ComboBoxItem Content="Octet"/>
                 <ComboBoxItem Content="Square"/>
                 <ComboBoxItem Content="Plain"/>
                 <ComboBoxItem Content="Finned"/>
                 <ComboBoxItem Content=""/>
             </ComboBox>
+            <Button x:Name="openCalibrationFileButton" Content="Open Calibration File" Click="OpenCalibrationFileButton_Click" Grid.Row="10" Grid.Column="0"/>
+            <Button x:Name="reloadCalibrationDataButton" Content="Reload Calibration Data" Click="ReloadCalibrationDataButton_Click" Grid.Row="10" Grid.Column="2"/>
+
         </Grid>
     </DockPanel>
 </Window>
