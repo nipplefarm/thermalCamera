@@ -55,15 +55,15 @@
             <Button x:Name="quitButton" Grid.Row="8" Grid.ColumnSpan="2" 
                     Content="Quit" Margin="10,10,10,10" Click="QuitButton_Click"/>
 
-            <ComboBox x:Name="choiceComboBox" Grid.Row="9" Grid.ColumnSpan="2" Margin="10,10,10,10" SelectionChanged="ChoiceComboBox_SelectionChanged" SelectedIndex="0">
+            <ComboBox x:Name="choiceComboBox" Grid.Row="9" Grid.ColumnSpan="2" Margin="10" SelectionChanged="ChoiceComboBox_SelectionChanged" SelectedIndex="0">
                 <ComboBoxItem Content="Octet"/>
                 <ComboBoxItem Content="Square"/>
                 <ComboBoxItem Content="Plain"/>
                 <ComboBoxItem Content="Finned"/>
                 <ComboBoxItem Content=""/>
             </ComboBox>
-            <Button x:Name="openCalibrationFileButton" Content="Open Calibration File" Click="OpenCalibrationFileButton_Click" Grid.Row="10" Grid.Column="0"/>
-            <Button x:Name="reloadCalibrationDataButton" Content="Reload Calibration Data" Click="ReloadCalibrationDataButton_Click" Grid.Row="10" Grid.Column="2"/>
+            <Button x:Name="openCalibrationFileButton" Margin="10" Content="Open Calibration File" Click="OpenCalibrationFileButton_Click" Grid.Row="10" Grid.Column="0"/>
+            <Button x:Name="reloadCalibrationDataButton" Margin="10" Content="Reload Calibration Data" Click="ReloadCalibrationDataButton_Click" Grid.Row="10" Grid.Column="2"/>
 
         </Grid>
     </DockPanel>
