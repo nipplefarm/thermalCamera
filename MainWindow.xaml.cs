@@ -96,27 +96,8 @@ namespace thermalCamera
         {
             if (sender is System.Windows.Controls.ComboBox comboBox)
             {
-                if (comboBox.Equals(camera1Selector) && camera1Selector.SelectedItem != null)
-                {
-                    UpdateCameraSelectorItems(camera2Selector, camera1Selector);
-                }
-                else if (comboBox.Equals(camera2Selector) && camera2Selector.SelectedItem != null)
-                {
-                    UpdateCameraSelectorItems(camera1Selector, camera2Selector);
-                }
-
                 startStopButton.IsEnabled = camera1Selector.SelectedIndex != -1 || camera2Selector.SelectedIndex != -1;
             }
-        }
-        private void UpdateCameraSelectorItems(System.Windows.Controls.ComboBox comboBoxToUpdate, System.Windows.Controls.ComboBox comboBoxWithSelectedValue)
-        {
-            var availableIndices = new List<int>((IEnumerable<int>)comboBoxWithSelectedValue.ItemsSource);
-            if (comboBoxToUpdate.SelectedItem != null)
-            {
-                availableIndices.Add((int)comboBoxToUpdate.SelectedItem);
-            }
-            availableIndices.Remove((int)comboBoxWithSelectedValue.SelectedItem);
-            comboBoxToUpdate.ItemsSource = availableIndices;
         }
 
         // Starts/stops the cameras when the start button is clicked
