@@ -33,8 +33,8 @@
             <Image x:Name="camera2Image" Grid.Row="0" Grid.Column="2" MouseMove="Image_MouseMove" MouseLeave="Image_MouseLeave" MouseEnter="Image_MouseEnter"/>
             <TextBlock x:Name="camera2TemperatureTextBlock" Grid.Row="1" Grid.Column="1" TextAlignment="Center"/>
 
-            <ComboBox x:Name="camera1Selector" Grid.Row="2" Grid.Column="0" Margin="0,36,0,0" Grid.RowSpan="2" />
-            <ComboBox x:Name="camera2Selector" Grid.Row="2" Grid.Column="1" Margin="0,36,0,0" Grid.RowSpan="2" />
+            <ComboBox x:Name="camera1Selector" Grid.Row="2" Grid.Column="0" Margin="10" Grid.RowSpan="2" />
+            <ComboBox x:Name="camera2Selector" Grid.Row="2" Grid.Column="1" Margin="10" Grid.RowSpan="2" />
 
 
             <Button x:Name="startStopButton" Grid.Row="4" Grid.ColumnSpan="2" IsEnabled="False"
