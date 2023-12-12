@@ -3,12 +3,24 @@
     "CameraId": "camera1",
     "Points": [
       {
-        "RawValue": 18,
-        "ReferenceTemperature": 18
+        "RawValue": 18.0,
+        "ReferenceTemperature": 18.0
       },
       {
-        "RawValue": 45,
-        "ReferenceTemperature": 45
+        "RawValue": 25.0,
+        "ReferenceTemperature": 25.0
+      },
+      {
+        "RawValue": 35.0,
+        "ReferenceTemperature": 35.0
+      },
+      {
+        "RawValue": 45.0,
+        "ReferenceTemperature": 45.0
+      },
+      {
+        "RawValue": 60.0,
+        "ReferenceTemperature": 60.0
       }
     ]
   },
@@ -16,14 +28,25 @@
     "CameraId": "camera2",
     "Points": [
       {
-        "RawValue": 18,
-        "ReferenceTemperature": 18
+        "RawValue": 18.0,
+        "ReferenceTemperature": 18.0
       },
       {
-        "RawValue": 45,
-        "ReferenceTemperature": 45
+        "RawValue": 25.0,
+        "ReferenceTemperature": 25.0
+      },
+      {
+        "RawValue": 35.0,
+        "ReferenceTemperature": 35.0
+      },
+      {
+        "RawValue": 45.0,
+        "ReferenceTemperature": 45.0
+      },
+      {
+        "RawValue": 60.0,
+        "ReferenceTemperature": 60.0
       }
     ]
   }
 ]
-

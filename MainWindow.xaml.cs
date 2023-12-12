@@ -48,17 +48,24 @@ namespace thermalCamera
 
         public MainWindow()
         {
+
             InitializeComponent();
             PopulateCameraSelection();
             recordButton.IsEnabled = false; // Disable record button initially
             directoryMessageTextBlock.Visibility = selectedFolderPath == "" ? Visibility.Visible : Visibility.Collapsed;
-            calibrationData = LoadCalibrationData(calibrationFilePath);
             temperatureUpdateTimer = new System.Windows.Threading.DispatcherTimer();
             temperatureUpdateTimer.Tick += TemperatureUpdateTimer_Tick;
-            temperatureUpdateTimer.Interval = TimeSpan.FromMilliseconds(250); // Update every 500 milliseconds
+            temperatureUpdateTimer.Interval = TimeSpan.FromMilliseconds(250); // Update every 250 milliseconds
             temperatureUpdateTimer.Start();
-            calibrationData = LoadCalibrationData(calibrationFilePath);
-
+            try
+            {
+                var calibrationDataList = LoadCalibrationData(calibrationFilePath);
+                calibrationData = calibrationDataList.ToDictionary(data => data.CameraId, data => data.Points);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during startup: {ex.Message}");
+            }
         }
 
 
@@ -594,13 +601,14 @@ namespace thermalCamera
 
 
         // calibration stuff
-        private Dictionary<string, List<CalibrationPoint>> LoadCalibrationData(string filePath)
+        private List<CameraCalibrationData> LoadCalibrationData(string filePath)
         {
             var jsonData = File.ReadAllText(filePath);
-            var cameraCalibrationDataList = JsonConvert.DeserializeObject<List<CameraCalibrationData>>(jsonData);
 
-            return cameraCalibrationDataList.ToDictionary(data => data.CameraId, data => data.Points);
+            return JsonConvert.DeserializeObject<List<CameraCalibrationData>>(jsonData);
         }
+
+
 
 
 
@@ -673,17 +681,28 @@ namespace thermalCamera
         {
             try
             {
-                calibrationData = LoadCalibrationData(calibrationFilePath);
-                MessageBox.Show("Calibration data reloaded successfully.");
+                // Load the calibration data from the file as a list
+                var calibrationDataList = LoadCalibrationData(calibrationFilePath);
+
+                // Convert the list to a dictionary for use within the application
+                calibrationData = calibrationDataList.ToDictionary(data => data.CameraId, data => data.Points);
+
+                // Save the potentially modified calibration data back to the file
+                SaveCalibrationDataToFile(calibrationDataList);
+
+                MessageBox.Show("Calibration data reloaded and updated successfully.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error reloading data: {ex.Message}");
+                MessageBox.Show($"Error reloading and updating data: {ex.Message}");
             }
         }
 
-
-
+        private void SaveCalibrationDataToFile(List<CameraCalibrationData> calibrationDataList)
+        {
+            string jsonData = JsonConvert.SerializeObject(calibrationDataList, Formatting.Indented);
+            File.WriteAllText(calibrationFilePath, jsonData);
+        }
 
         // Changes raw image to bitmap for viewing
         public BitmapSource? ToBitmapSource(Mat image)
