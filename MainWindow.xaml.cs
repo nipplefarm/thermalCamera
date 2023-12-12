@@ -263,7 +263,7 @@ namespace thermalCamera
 
                 if (isRecording)
                 {
-                    string fileName = $"camera2_{camera1FileCounter:D4}.tiff";
+                    string fileName = $"camera2_{camera2FileCounter:D4}.tiff";
                     string filePath = Path.Combine(recordingFolderPath, fileName);
                     camera2FileCounter++;
                     croppedFrame2.Save(filePath); // Save the raw Y16 frame
@@ -329,16 +329,17 @@ namespace thermalCamera
             // Read 16-bit value (2 bytes) for Y16 format
             IntPtr pixelPtr = frame.DataPointer + y * frame.Step + x * frame.ElementSize;
             ushort rawValue = (ushort)(Marshal.ReadByte(pixelPtr) | (Marshal.ReadByte(pixelPtr + 1) << 8));
-            double tempValue = (double)rawValue / 100 - 273.15;
-            // Apply calibration
-            // APPLY CALIBRATION HERE 
-            // return ApplyCalibration(rawValue, calibrationData);
+
+            // Apply calibration directly with rawValue (in centiKelvin)
             if (calibrationData.TryGetValue(cameraId, out var cameraCalibrationPoints))
             {
-                return ApplyCalibration((double)rawValue / 100 - 273.15, cameraCalibrationPoints);
+                return ApplyCalibration(rawValue, cameraCalibrationPoints);
             }
-            return tempValue;
+
+            // Convert to Celsius for display or if no calibration data available
+            return (double)rawValue / 100 - 273.15;
         }
+
 
 
 
@@ -365,15 +366,30 @@ namespace thermalCamera
                     selectedOption = selectedItem.Content.ToString()!;
                 }
 
-                // Ensure the recordingFolderPath is always based on the selectedFolderPath
                 recordingFolderPath = Path.Combine(selectedFolderPath, CreateRecordingFolderName(selectedOption));
                 camera1FileCounter = 0;
                 camera2FileCounter = 0;
+
+                // Save calibration data
+                SaveCalibrationData(recordingFolderPath);
+
+                // Other recording start logic...
             }
             else
             {
+                // Recording stop logic...
             }
         }
+
+        private void SaveCalibrationData(string folderPath)
+        {
+            string calibrationFilePath = Path.Combine(folderPath, "calibrationData.json");
+            // Directly serialize the calibration data without any conversion
+            string jsonData = JsonConvert.SerializeObject(calibrationData, Formatting.Indented);
+            File.WriteAllText(calibrationFilePath, jsonData);
+        }
+
+
 
         // Updates Record button state
         private void UpdateRecordButtonState()
@@ -583,45 +599,38 @@ namespace thermalCamera
             var jsonData = File.ReadAllText(filePath);
             var cameraCalibrationDataList = JsonConvert.DeserializeObject<List<CameraCalibrationData>>(jsonData);
 
-            int desiredNumberOfPoints = 5; // Set the desired number of calibration points
-
-            foreach (var cameraData in cameraCalibrationDataList)
-            {
-                while (cameraData.Points.Count < desiredNumberOfPoints)
-                {
-                    cameraData.Points.Add(new CalibrationPoint { RawValue = 0, ReferenceTemperature = 0 });
-                }
-            }
-            File.WriteAllText(filePath, JsonConvert.SerializeObject(cameraCalibrationDataList, Formatting.Indented));
-
-
             return cameraCalibrationDataList.ToDictionary(data => data.CameraId, data => data.Points);
         }
-
 
 
 
         // calibration linear interp based off calibrationData.json
         private double ApplyCalibration(double cameraReading, List<CalibrationPoint> calibrationPoints)
         {
+            // Convert camera reading from centiKelvin to Celsius for comparison
+            double cameraReadingInCelsius = cameraReading / 100.0 - 273.15;
+
             // Simple linear interpolation between calibration points
-            // For more accurate results, consider using a more sophisticated method
             for (int i = 0; i < calibrationPoints.Count - 1; i++)
             {
-                if (cameraReading >= calibrationPoints[i].RawValue &&
-                    cameraReading <= calibrationPoints[i + 1].RawValue)
+                // Convert calibration points from Celsius to centiKelvin
+                double calPointRawValue1 = (calibrationPoints[i].RawValue + 273.15) * 100;
+                double calPointRawValue2 = (calibrationPoints[i + 1].RawValue + 273.15) * 100;
+
+                if (cameraReadingInCelsius >= calibrationPoints[i].RawValue &&
+                    cameraReadingInCelsius <= calibrationPoints[i + 1].RawValue)
                 {
                     double diff = calibrationPoints[i + 1].RawValue - calibrationPoints[i].RawValue;
-                    double factor = (cameraReading - calibrationPoints[i].RawValue) / diff;
+                    double factor = (cameraReadingInCelsius - calibrationPoints[i].RawValue) / diff;
                     return calibrationPoints[i].ReferenceTemperature +
                            factor * (calibrationPoints[i + 1].ReferenceTemperature - calibrationPoints[i].ReferenceTemperature);
                 }
             }
 
-            // If the reading is outside the calibration range, you might want to handle it differently
-            // For example, return the camera reading, or throw an exception, or handle however you see fit
-            return cameraReading;
+            // If the reading is outside the calibration range, return the camera reading in Celsius
+            return cameraReadingInCelsius;
         }
+
 
         // crops image to get rid of two extraneous pixel rows
         private Mat CropImage(Mat original, int width, int height)

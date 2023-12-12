@@ -3,11 +3,11 @@
     "CameraId": "camera1",
     "Points": [
       {
-        "RawValue": 29315,
+        "RawValue": 18,
         "ReferenceTemperature": 18
       },
       {
-        "RawValue": 31315,
+        "RawValue": 45,
         "ReferenceTemperature": 45
       }
     ]
@@ -16,11 +16,11 @@
     "CameraId": "camera2",
     "Points": [
       {
-        "RawValue": 29315,
+        "RawValue": 18,
         "ReferenceTemperature": 18
       },
       {
-        "RawValue": 31315,
+        "RawValue": 45,
         "ReferenceTemperature": 45
       }
     ]
