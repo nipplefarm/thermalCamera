@@ -27,6 +27,7 @@
     <None Include="..\..\..\..\Downloads\thermal-imaging.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

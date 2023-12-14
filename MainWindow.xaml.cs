@@ -45,7 +45,7 @@ namespace thermalCamera
         private bool isMouseOverImage = false;
         private System.Windows.Threading.DispatcherTimer temperatureUpdateTimer;
         private String calibrationFilePath = "Data/calibrationData.json";
-
+        
         public MainWindow()
         {
 
@@ -336,19 +336,21 @@ namespace thermalCamera
             // Read 16-bit value (2 bytes) for Y16 format
             IntPtr pixelPtr = frame.DataPointer + y * frame.Step + x * frame.ElementSize;
             ushort rawValue = (ushort)(Marshal.ReadByte(pixelPtr) | (Marshal.ReadByte(pixelPtr + 1) << 8));
-
+            calibrationData.TryGetValue(cameraId, out var cameraCalibrationPoints);
             // Apply calibration directly with rawValue (in centiKelvin)
-            if (calibrationData.TryGetValue(cameraId, out var cameraCalibrationPoints))
+            bool isCalibrationApplied = Dispatcher.Invoke(() => applyCalibrationCheckbox.IsChecked == true);
+            if (isCalibrationApplied == true)
             {
+
                 return ApplyCalibration(rawValue, cameraCalibrationPoints);
             }
 
+            else 
+            { 
+                return (double)rawValue / 100 - 273.15;
+            }
             // Convert to Celsius for display or if no calibration data available
-            return (double)rawValue / 100 - 273.15;
         }
-
-
-
 
 
         // Record button logic
@@ -697,12 +699,25 @@ namespace thermalCamera
                 MessageBox.Show($"Error reloading and updating data: {ex.Message}");
             }
         }
+        private void ApplyCalibrationCheckbox_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void ApplyCalibrationCheckbox_Unchecked(object sender, RoutedEventArgs e)
+        {
+ 
+        }
+
+
 
         private void SaveCalibrationDataToFile(List<CameraCalibrationData> calibrationDataList)
         {
             string jsonData = JsonConvert.SerializeObject(calibrationDataList, Formatting.Indented);
             File.WriteAllText(calibrationFilePath, jsonData);
         }
+
+
 
         // Changes raw image to bitmap for viewing
         public BitmapSource? ToBitmapSource(Mat image)

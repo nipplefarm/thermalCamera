@@ -18,6 +18,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <Grid.ColumnDefinitions>
@@ -64,6 +65,7 @@
             </ComboBox>
             <Button x:Name="openCalibrationFileButton" Margin="10" Content="Open Calibration File" Click="OpenCalibrationFileButton_Click" Grid.Row="10" Grid.Column="0"/>
             <Button x:Name="reloadCalibrationDataButton" Margin="10" Content="Reload Calibration Data" Click="ReloadCalibrationDataButton_Click" Grid.Row="10" Grid.Column="2"/>
+            <CheckBox x:Name="applyCalibrationCheckbox" Margin="10" Content="Apply Calibration" Checked="ApplyCalibrationCheckbox_Checked" Unchecked="ApplyCalibrationCheckbox_Unchecked" Grid.Row="11" Grid.Column="2"/>
 
         </Grid>
     </DockPanel>
