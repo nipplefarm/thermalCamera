@@ -55,7 +55,7 @@ namespace thermalCamera
             directoryMessageTextBlock.Visibility = selectedFolderPath == "" ? Visibility.Visible : Visibility.Collapsed;
             temperatureUpdateTimer = new System.Windows.Threading.DispatcherTimer();
             temperatureUpdateTimer.Tick += TemperatureUpdateTimer_Tick;
-            temperatureUpdateTimer.Interval = TimeSpan.FromMilliseconds(250); // Update every 250 milliseconds
+            temperatureUpdateTimer.Interval = TimeSpan.FromMilliseconds(500); // Update every 500 milliseconds
             temperatureUpdateTimer.Start();
             try
             {
@@ -121,10 +121,24 @@ namespace thermalCamera
                 StopCameras();
                 startStopButton.Content = "Start";
                 recordButton.IsEnabled = false;
+
+                // Check if recording is in progress and stop it
+                if (isRecording)
+                {
+                    StopRecording();
+                }
             }
             isCapturing = !isCapturing;
             UpdateRecordButtonState();
         }
+
+        private void StopRecording()
+        {
+            isRecording = false;
+            recordButton.Content = "Record";
+        }
+
+
 
         // Starts the cameras and updates temperatures
         private async Task StartCamerasAsync()
@@ -405,9 +419,10 @@ namespace thermalCamera
         {
             recordButton.IsEnabled = !string.IsNullOrEmpty(selectedFolderPath) && isCapturing;
         }
+
         private string CreateRecordingFolderName(string option)
         {
-            string folderName = DateTime.Now.ToString("HH_mm-dd-MM-yy_") + option;
+            string folderName = DateTime.Now.ToString("HH-mm-ss_dd-MM-yy_") + option;
             Directory.CreateDirectory(Path.Combine(selectedFolderPath, folderName));
             return folderName;
         }
